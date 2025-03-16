@@ -1,0 +1,369 @@
+
+"""
+
+# Installing the libraries with the specified version.
+!pip install numpy==1.25.2 pandas==1.5.3 matplotlib==3.7.1 seaborn==0.13.1 -q --user
+
+"""**Note**: *After running the above cell, kindly restart the notebook kernel and run all cells sequentially from the start again.*"""
+
+# Commented out IPython magic to ensure Python compatibility.
+# import libraries for data manipulation
+import numpy as np
+import pandas as pd
+
+# import libraries for data visualization
+import matplotlib.pyplot as plt
+import seaborn as sns
+%matplotlib inline
+
+"""### Understanding the structure of the data"""
+
+# uncomment and run the following lines for Google Colab
+# from google.colab import drive
+# drive.mount('/content/drive')
+from google.colab import drive
+drive.mount('/content/drive')
+
+# Write your code here to read the data
+data = pd.read_csv('/content/drive/MyDrive/foodhub_order.csv')
+
+# Write your code here to view the first 5 rows
+data.head()
+
+"""### **Question 1:** How many rows and columns are present in the data? [0.5 mark]"""
+
+# Write your code here
+data.shape
+
+"""#### Observations:
+There are 1898 rows and 9 columns in the dataset.
+
+### **Question 2:** What are the datatypes of the different columns in the dataset? (The info() function can be used) [0.5 mark]
+"""
+
+# Write your code here
+data.info()
+
+"""#### Observations:
+The info function shows the data type of each column. order_id, customer_id, food_preparation_time, delivery_time are type int64 which makes sense as it is suppossed to be in integer form where as, cost_of_the_order may vary in cents so it is float 64. restaurant_name, cuisine_type, day_of_the_week consists letters which describes them as string/object column. However, Rating column being data type = object looks unusual which is why we will dive more into that column to verify if there are any missing values and also treat them.
+
+### **Question 3:** Are there any missing values in the data? If yes, treat them using an appropriate method. [1 mark]
+"""
+
+# Write your code here
+data.isnull().sum()
+
+#finding unique values of day of the week to evaluate null values
+data['day_of_the_week'].unique()
+
+#finding unique values of ratings to evaluate null values
+data['rating'].unique()
+
+#Converting all Not Given values in ratings to Nan value as well as changing object type to float type
+data.loc[data['rating'] == 'Not given']
+
+data['rating'] = data['rating'].replace(['Not given'], np.nan)
+
+data['rating'].unique()
+
+data['rating'] = data['rating'].astype(float)
+
+# Evaluating null values in cuisine type
+data['cuisine_type'].unique()
+
+# Confirming the successful change of rating data type to float
+data.info()
+
+"""#### Observations:
+Dived into rating column to see if any missing values exists. After analyzing, noted that 736 rows in rating column consists of missing values as 'Not given'. To treat them, all 'not given' has been replaced with np string which is 'nan' means no number assigned. Later on, converted the column into float data type. Also, checked the unique values in day_of_the_week as well as cuisine_type column to assure it does not have any missing values. All the restaurants other than 'nan' consists 3 or above ratings.
+
+### **Question 4:** Check the statistical summary of the data. What is the minimum, average, and maximum time it takes for food to be prepared once an order is placed? [2 marks]
+"""
+
+# Write your code here
+data.describe(include = 'all').T
+
+"""#### Observations:
+The minimum food preparation time after order has been placed is 20 mins and maximum time for preparation is 35 mins. On average it takes 27 mins and 37 secs for food preparation.
+
+### **Question 5:** How many orders are not rated? [1 mark]
+"""
+
+# Write the code here
+non_rated_orders = data.loc[data['rating'].isnull()== True, 'order_id'].value_counts(dropna=False)
+
+non_rated_orders.shape[0]
+
+"""#### Observations:
+There are total 736 orders which are not rated.
+
+### Exploratory Data Analysis (EDA)
+
+### Univariate Analysis
+
+### **Question 6:** Explore all the variables and provide observations on their distributions. (Generally, histograms, boxplots, countplots, etc. are used for univariate exploration.) [9 marks]
+"""
+
+# Write the code here
+# Univariate analysis of order id column
+sns.boxplot(data=data, x='order_id');
+
+sns.histplot(data=data, x='order_id');
+
+# Univariate analysis of customer id column
+sns.boxplot(data=data, x='customer_id');
+
+sns.histplot(data=data, x='customer_id');
+
+# Univariate analysis of cuisine type column
+sns.histplot(data=data, x='cuisine_type')
+plt.xticks(rotation=90);
+
+#Univariate analysis of cost of the order column
+sns.histplot(data=data, x='cost_of_the_order', kde=True);
+
+# Univariate analysis of day of the week column
+sns.histplot(data=data, x='day_of_the_week');
+
+# Univariate analysis of rating column
+sns.histplot(data=data, x='rating');
+
+# Univariate Analysis of food preparation time column
+sns.histplot(data=data, x='food_preparation_time', kde=True);
+
+# Univariate Analysis of delivery time column
+sns.histplot(data=data, x='delivery_time');
+
+"""### **Question 7**: Which are the top 5 restaurants in terms of the number of orders received? [1 mark]"""
+
+# Write the code here
+# Calculating the number of orders made at each restaurants
+order_counts = data['restaurant_name'].value_counts()
+
+# Finding top 5 restaurants with highest number of orders
+order_counts.sort_values(ascending=False).head()
+
+"""#### Observations:
+The top 5 restaurants with highest number of orders are Shake Shack, The Meatball Shop, Blue Ribbon Sushi, Blue Ribbon Fried Chicken and Parm.
+
+### **Question 8**: Which is the most popular cuisine on weekends? [1 mark]
+"""
+
+# Write the code here
+# Running Univariate analyis of cuisine type column with hue as day of the week to find out which cuisine is popular on weekends
+sns. countplot(data=data, x='cuisine_type', hue='day_of_the_week')
+plt.xticks(rotation=90);
+
+"""#### Observations:
+From the above representation, American cuisine is the most popular on the weekends.
+
+### **Question 9**: What percentage of the orders cost more than 20 dollars? [2 marks]
+"""
+
+# Write the code here
+# Calculating the number of orders whose costs exceeds 20
+order_cost_above_20 = data[data['cost_of_the_order'] > 20].shape[0]
+
+# Calculating total count of cost in table
+total_order_cost = data['cost_of_the_order'].shape[0]
+
+total_order_cost
+
+order_cost_above_20
+
+# Dividing order count exceeding 20 with total order cost count and multiplying it by 100 to find the percentage of cost order above 20
+percentage_cost_order_above_20 = (order_cost_above_20/total_order_cost)*100
+
+# printing the percentage cost order above 20
+percentage_cost_order_above_20
+
+"""#### Observations:
+The percentage of order cost more than 20$ is 29.24%
+
+### **Question 10**: What is the mean order delivery time? [1 mark]
+"""
+
+# Write the code here
+# Calculating average of delivery time column
+data['delivery_time'].mean()
+
+"""#### Observations:
+The average order delivery time is 24 mins and 16 secs
+
+### **Question 11:** The company has decided to give 20% discount vouchers to the top 3 most frequent customers. Find the IDs of these customers and the number of orders they placed. [1 mark]
+"""
+
+# Write the code here
+# Calculating the number of order made by each customer id
+discount_voucher_customers = data['customer_id'].value_counts()
+
+# Printing the top 3 customers who has placed highest orders
+discount_voucher_customers.head(3)
+
+"""#### Observations:
+Top 3 customer_id who should be given 20% off vouchers for their maximum orders are 52832, 47440, 83287.
+
+### Multivariate Analysis
+
+### **Question 12**: Perform a multivariate analysis to explore relationships between the important variables in the dataset. (It is a good idea to explore relations between numerical variables as well as relations between numerical and categorical variables) [10 marks]
+"""
+
+# Write the code here
+# Multivariate analysis of all numerical variables such as order id, customer id, cost of order, rating, food preparation time, delivery time
+sns.heatmap(data=data[['order_id', 'customer_id', 'cost_of_the_order', 'rating', 'food_preparation_time', 'delivery_time']].corr(), annot=True);
+
+# Multivariate analysis of all numerical variables
+sns.pairplot(data=data[['order_id', 'customer_id', 'cost_of_the_order', 'rating', 'food_preparation_time', 'delivery_time']]);
+
+# Multivariate analysis between numerical and categorial variable
+sns.catplot(data=data, x='day_of_the_week', y='delivery_time', col='rating', kind='bar');
+
+# Multivariate analysis between numerical and categorical variable
+sns.catplot(data=data, x='day_of_the_week', y='food_preparation_time', col='rating', kind='bar');
+
+# Bivariate analysis between numerical and categorical variable with the help of scattered plot
+sns.scatterplot(data=data, x='day_of_the_week', y='delivery_time');
+
+# Multivariate analysis between numerical and categorical variable
+plt.figure(figsize=(30,20))
+sns.catplot(data=data, x='day_of_the_week', y='food_preparation_time', col='cuisine_type', kind='bar');
+
+# Multivariate analysis between numerical and categorical variable
+plt.figure(figsize=(30,20))
+sns.catplot(data=data, x='day_of_the_week', y='delivery_time', col='cuisine_type', kind='bar');
+
+# Multivariate analysis between numerical and categorical variables
+plt.figure(figsize=(30,20))
+sns.catplot(data=data, x='rating', y='food_preparation_time', col='cuisine_type', kind='bar');
+
+# Multivariate analysis between numerical and categorical variables
+plt.figure(figsize=(30,20))
+sns.catplot(data=data, x='rating', y='delivery_time', col='cuisine_type', kind='bar');
+
+# Multivariate analysis between numerical and categorical variables
+plt.figure(figsize=(30,20))
+sns.catplot(data=data, x='day_of_the_week', y='cost_of_the_order', col='cuisine_type', kind='bar');
+
+# Multivariate analysis between numerical and categorical variables
+plt.figure(figsize=(30,20))
+sns.catplot(data=data, x='rating', y='cost_of_the_order', col='cuisine_type', kind='bar');
+
+# Multivariate analysis between numerical and categorical variables
+sns.scatterplot(data=data, x='rating', y='cuisine_type');
+
+# Multivariate analysis between numerical and categorical variables
+sns.catplot(data=data, x='delivery_time', y='food_preparation_time', col='cuisine_type', hue='day_of_the_week', kind='bar');
+
+"""### **Question 13:** The company wants to provide a promotional offer in the advertisement of the restaurants. The condition to get the offer is that the restaurants must have a rating count of more than 50 and the average rating should be greater than 4. Find the restaurants fulfilling the criteria to get the promotional offer. [3 marks]"""
+
+# Filtering the restaurants whose ratings are Nan
+filtered_data = data.dropna(subset=['rating'])
+
+# Grouping filtered restaurants with total count of rating for each restaurant
+rating_count = filtered_data.groupby(['restaurant_name'])['rating'].sum().reset_index()
+
+print(rating_count)
+
+# Naming the total rating count column as rating counts
+rating_count.columns = ['restaurant_name', 'rating_counts']
+
+print(rating_count)
+
+# Filtering the restaurants whose rating count is above 50
+filtered_restaurants = rating_count.loc[rating_count['rating_counts']>50]
+
+# Grouping the restaurants and finding the average rating for each
+average_ratings = filtered_data.groupby('restaurant_name')['rating'].mean().reset_index()
+
+# Grouping the average rating of restaurant with filtered restaurants whose rating count is above 50
+average_ratings = average_ratings[average_ratings['restaurant_name'].isin(filtered_restaurants['restaurant_name'])]
+
+# Sorting the average rating from highest to lowest
+average_ratings.sort_values(by='rating', ascending=False)
+
+average_ratings.shape
+
+"""###Observation: There are total 25 restaurants which has rating count above 50 as well as average rating of above 4 are eligible for receiving promotional offer.
+
+### **Question 14:** The company charges the restaurant 25% on the orders having cost greater than 20 dollars and 15% on the orders having cost greater than 5 dollars. Find the net revenue generated by the company across all orders. [3 marks]
+"""
+
+# Write the code here
+# Defining the function calculate revenue and conditioning it to calculate the total revenue
+def calculate_revenue(cost_of_the_order):
+  if cost_of_the_order > 20:
+    return cost_of_the_order*0.25
+  elif cost_of_the_order > 5:
+    return cost_of_the_order*0.15
+  else:
+    return 0
+
+# Applying the function to the cost of order column
+data['revenue'] = data['cost_of_the_order'].apply(calculate_revenue)
+
+# Adding the total calculated revenue
+net_revenue = data['revenue'].sum()
+
+net_revenue
+
+"""#### Observations:
+The net revenue of the company after 25% discount on order cost above 20 as well as 15% discount on order cost above 5 is $6166.303
+
+### **Question 15:** The company wants to analyze the total time required to deliver the food. What percentage of orders take more than 60 minutes to get delivered from the time the order is placed? (The food has to be prepared and then delivered.) [2 marks]
+"""
+
+# Write the code here
+# Calculating the total preparation time by adding the delivery time and food preparation time
+data['total_preparation_time'] = data['delivery_time'] + data['food_preparation_time']
+
+# Filtering the data where total preparationg time exceed 60 minutes
+more_than_60 = data[data['total_preparation_time'] > 60].shape[0]
+
+# Calculating the total order count
+total_orders = data.shape[0]
+
+# Calculating the percentage of order whose total preparating time is above 60
+percentage_of_order_more_than_60 = (more_than_60/ total_orders)*100
+
+print(percentage_of_order_more_than_60)
+
+"""#### Observations:
+10.53% of orders takes more than 60 minutes to deliver from the time order is placed.
+
+### **Question 16:** The company wants to analyze the delivery time of the orders on weekdays and weekends. How does the mean delivery time vary during weekdays and weekends? [2 marks]
+"""
+
+# Write the code here
+# Grouping the day of the week by counting the average of delivery time on weekdays as well as weekends
+data.groupby(['day_of_the_week'])['delivery_time'].mean()
+
+"""#### Observations:
+The average delivery time for weekdays is 28 mins 34 secs and for weekends is 22 mins 47 secs.
+
+### Conclusion and Recommendations
+The average delivery time for weekdays are higher compare to weekends. There could be various reason of delivery taking longer on weekdays such as traffic congestion, limited staff availability, large volume of orders on weekdays etc. As a recommendation, restaurants can hire sufficient staff to fulfil the requirement for efficient food deliveries.
+
+### **Question 17:** What are your conclusions from the analysis? What recommendations would you like to share to help improve the business? (You can use cuisine type and feedback ratings to drive your business recommendations.) [6 marks]
+
+### Conclusions:
+1. There are total 1898 data regarding restaurants in New York, their order ID, customer ID, ratings, Cuisine, cost, the day order was placed, Food preparation time and Delivery time.
+2. There are 736 data which is not rated.
+3. There are total 25 restaurants which has more than 50 rating counts as well as average rating exceeds 4.
+4. The average delivery time of weekend is lower than weekdays which means it takes longer to deliver food on weekdays compared to weekends.
+5. Ratings and cost of the order are slightly positively correlated with each other
+6. Most orders are placed on weekends compared to weekdays.
+7. American cuisine is highly preffered among customers on weekends as well as weekdays followed by Japanese cuisine.
+8. Veitamese cuisine is less preffered among customers as it has least order counts.
+9. In most cases, if Food preparation time is less, the higher will be rating such as cuisine type- Korean, Mexican, Thai has higher rating with low food preparating time.
+10. In most cases, if delivery time is higher, the ratings will be lower such as in cuisine type- Mexican, Mediterranean, Southern, Spanish has low rating due to higher delivery time.
+11. Most highest ratings given by customers are between 4.5 to 5.
+12. There are few customers who have placed order through app more than 5 times.
+
+### Recommendations:
+
+1. To reduce the delivery time during weekdays, food aggregator company can hire suffcient delivery drivers to avoid delayed deliveries of food.
+2. In case of traffic congestion which might affect delivery time, customers can be notified while placing the order on app about the possibility of longer delivery time due to above reason. It can reduce the chances of customer giving low ratings due to extended delivery time.
+3. As mentioned above, American cuisine is famous among customers so company can look into adding or tying up with more restaurants which offers such cuisine to enhance restaurants options for customers.
+4. Company can offer discounts to customers who exceeds certain amount of orders made through the app for their long term loyalty and they must be treated as a valuable asset for the company.
+5. Company can find better alternative for ratings such as customers might get rewards on rating n number of orders. It will induce maximum customers to rate the order after every delivery.
+"""
